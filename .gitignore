@@ -1,0 +1,8 @@
+*
+!*/
+!.*
+!*.py
+!*.pyx
+!*.md
+!*.ipynb
+!Makefile
