@@ -163,6 +163,7 @@ def learning_rule_adadelta(parameters, gradients, rho=0.9, epsilon=1e-6):
     return updates
 
 
+
 #-----------------------------------------------------------------------------#
 #                              TRAINING FUNCTIONS                             #
 #-----------------------------------------------------------------------------#
@@ -188,7 +189,11 @@ def train_fixed_epochs_with_validation(n_epochs, train_model,
         Should take input from `validate_batch_iterator` and output the
         validation loss. The function can provide more than one output (which
         would be averaged), but for the validation only the first output will
-        be used.
+        be used (except if `validate_extrinsic` is provided).
+    validate_extrinsic : function
+        Extrinsic evaluation can be performed using this function. If provided,
+        validation is performed on the output of this function instead of using
+        the output from `validate_model`.
     save_model_func : function
         If provided, this function is used to the save the model to the file
         `save_model_fn` every time a new validation best model is found.
@@ -211,6 +216,8 @@ def train_fixed_epochs_with_validation(n_epochs, train_model,
     record_dict["validation_loss"] = []     # validation is not necessarily performed every epoch
     if test_model is not None:
         record_dict["test_loss"] = []       # and neither is testing
+    # if validate_extrinsic is not None:
+    #     record_dict["validation_extrinsic"] = []
     record_dict["epoch_time"] = []
 
     # Training epochs
