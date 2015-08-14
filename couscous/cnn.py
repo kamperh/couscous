@@ -189,7 +189,7 @@ class CNN(object):
                 hidden_layer_specs
                 )
 
-        # Build logistic regression class prediction layer
+        # Logistic regression class prediction layer
         layer = logistic.LogisticRegression(
             input=self.layers[-1].output,
             d_in=hidden_layer_specs[-1]["units"],
@@ -215,7 +215,7 @@ class CNN(object):
             self.l1 += abs(layer.W).sum()
             self.l2 += (layer.W**2).sum()
 
-        # Symbolic expressions of cost and prediction
+        # Symbolic expressions of log likelihood loss and prediction error
         self.negative_log_likelihood = self.layers[-1].negative_log_likelihood
         self.errors = self.layers[-1].errors
         if dropout_rates is not None:

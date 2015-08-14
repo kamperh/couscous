@@ -24,7 +24,10 @@ def test_mlp():
     hidden_layer_sizes = [20, 30, 20]
     x = T.matrix("x")       # input: feature vectors
     y = T.ivector("y")      # output: int values for each class
-    model = MLP(rng, input=x, d_in=d_in, d_out=d_out, hidden_layer_sizes=hidden_layer_sizes)
+    model = MLP(
+        rng, input=x, d_in=d_in, d_out=d_out,
+        hidden_layer_specs=[{"units": units, "activation": "tanh"} for units in hidden_layer_sizes]
+        )
     cost = model.negative_log_likelihood(y) + l1_weight * model.l1 + l2_weight * model.l2
 
     # Generate non-zero weights and biases and assign to logistic regression
@@ -87,8 +90,7 @@ def test_mlp_relu():
     y = T.ivector("y")      # output: int values for each class
     model = MLP(
         rng, input=x, d_in=d_in, d_out=d_out,
-        hidden_layer_sizes=hidden_layer_sizes,
-        hidden_layer_activation=hidden_layer_activation
+        hidden_layer_specs=[{"units": units, "activation": hidden_layer_activation} for units in hidden_layer_sizes]
         )
     cost = model.negative_log_likelihood(y) + l1_weight * model.l1 + l2_weight * model.l2
 

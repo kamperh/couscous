@@ -160,10 +160,14 @@ class MLP(object):
         Given by `errors` from the logistic regression layer.
     """
 
-    def __init__(self, rng, input, d_in, d_out, hidden_layer_sizes=[500,],
-            hidden_layer_activation=T.tanh):
+    def __init__(self, rng, input, d_in, d_out, hidden_layer_specs, srng=None,
+            dropout_rates=None):
         """
         Initialize symbolic parameters and expressions.
+
+        Most of the parameters are identical to that of `build_mlp_layers`,
+        which is used to build all the layers of the MLP, with a logistic
+        regression layer added on top.
 
         Parameters
         ----------
@@ -180,41 +184,59 @@ class MLP(object):
         """
 
         self.input = input
-        self.layers = []
-        n_layers = len(hidden_layer_sizes)
-        assert n_layers > 0
+        assert len(hidden_layer_specs) > 0
 
-        # Build hidden layers
-        for i_layer in xrange(n_layers):
-
-            if i_layer == 0:
-                cur_d_in = d_in
-                cur_input = input
-            else:
-                cur_d_in = hidden_layer_sizes[i_layer - 1]
-                cur_input = self.layers[i_layer - 1].output
-
-            hidden_layer = HiddenLayer(
-                rng=rng,
-                input=cur_input,
-                d_in=cur_d_in,
-                d_out=hidden_layer_sizes[i_layer],
-                activation=hidden_layer_activation
+        if dropout_rates is not None:
+            self.dropout_layers, self.layers = build_mlp_layers(
+                rng, input, d_in, hidden_layer_specs, srng, dropout_rates
                 )
+        else:
+            self.layers = build_mlp_layers(rng, input, d_in, hidden_layer_specs)
 
-            self.layers.append(hidden_layer)
+        # self.layers = []
+        # n_layers = len(hidden_layer_sizes)
+        # assert n_layers > 0
 
-            # self.l1 += abs(self.layers[-1].W).sum()
-            # self.l2 += (self.layers[-1].W ** 2).sum()
-            # self.parameters.extend(hidden_layer.parameters)
+        # # Build hidden layers
+        # for i_layer in xrange(n_layers):
+
+        #     if i_layer == 0:
+        #         cur_d_in = d_in
+        #         cur_input = input
+        #     else:
+        #         cur_d_in = hidden_layer_sizes[i_layer - 1]
+        #         cur_input = self.layers[i_layer - 1].output
+
+        #     hidden_layer = HiddenLayer(
+        #         rng=rng,
+        #         input=cur_input,
+        #         d_in=cur_d_in,
+        #         d_out=hidden_layer_sizes[i_layer],
+        #         activation=hidden_layer_activation
+        #         )
+
+        #     self.layers.append(hidden_layer)
+
+        #     # self.l1 += abs(self.layers[-1].W).sum()
+        #     # self.l2 += (self.layers[-1].W ** 2).sum()
+        #     # self.parameters.extend(hidden_layer.parameters)
 
         # Logistic regression class prediciton layer
         layer = logistic.LogisticRegression(
             input=self.layers[-1].output,
-            d_in=hidden_layer_sizes[-1],
+            d_in=hidden_layer_specs[-1]["units"],
             d_out=d_out
             )
         self.layers.append(layer)
+        if dropout_rates is not None:
+            dropout_layer = logistic.LogisticRegression(
+                input=self.dropout_layers[-1].output,
+                d_in=hidden_layer_specs[-1]["units"],
+                d_out=d_out,
+                W=layer.W,
+                b=layer.b
+                )
+            self.dropout_layers.append(dropout_layer)
 
         # Model parameters
         self.parameters = []
@@ -225,22 +247,23 @@ class MLP(object):
             self.l1 += abs(layer.W).sum()
             self.l2 += (layer.W**2).sum()
 
-        # Symbolic expressions for the MLP
+        # Symbolic expressions of log likelihood loss and prediction error
         self.y_pred = self.layers[-1].y_pred
         self.negative_log_likelihood = self.layers[-1].negative_log_likelihood
         self.errors = self.layers[-1].errors
+        if dropout_rates is not None:
+            self.dropout_negative_log_likelihood = self.dropout_layers[-1].negative_log_likelihood
+            self.dropout_errors = self.dropout_layers[-1].errors
 
     def save(self, f):
         """Pickle the model parameters to opened file `f`."""
         for layer in self.layers:
             layer.save(f)
-        # self.logistic_regression.save(f)
 
     def load(self, f):
         """Load the model parameters from the opened pickle file `f`."""
         for layer in self.layers:
             layer.load(f)
-        # self.logistic_regression.load(f)
 
 
 #-----------------------------------------------------------------------------#
@@ -436,8 +459,9 @@ def main():
     y = T.ivector("y")      # output: int values for each class
     model = MLP(
         rng, input=x, d_in=d_in, d_out=d_out,
-        hidden_layer_sizes=hidden_layer_sizes,
-        hidden_layer_activation=hidden_layer_activation
+        hidden_layer_specs=[
+            {"units": units, "activation": hidden_layer_activation} for units in hidden_layer_sizes
+            ]
         )
     cost = model.negative_log_likelihood(y) + l1_weight * model.l1 + l2_weight * model.l2
 
