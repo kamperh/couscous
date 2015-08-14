@@ -179,14 +179,12 @@ class MLP(object):
             See `activation` parameter of `HiddenLayer`.
         """
 
+        self.input = input
         self.layers = []
-        self.parameters = []
         n_layers = len(hidden_layer_sizes)
         assert n_layers > 0
 
         # Build hidden layers
-        self.l1 = 0
-        self.l2 = 0
         for i_layer in xrange(n_layers):
 
             if i_layer == 0:
@@ -218,10 +216,14 @@ class MLP(object):
             )
         self.layers.append(layer)
 
+        # Model parameters
+        self.parameters = []
+        self.l1 = 0
+        self.l2 = 0
         for layer in self.layers:
+            self.parameters += layer.parameters
             self.l1 += abs(layer.W).sum()
             self.l2 += (layer.W**2).sum()
-            self.parameters += layer.parameters
 
         # Symbolic expressions for the MLP
         self.y_pred = self.layers[-1].y_pred

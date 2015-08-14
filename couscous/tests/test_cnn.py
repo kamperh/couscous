@@ -86,10 +86,13 @@ def test_cnn_build_layers():
     input = T.matrix("x")
     input_shape = (batch_size, in_channels, height, width)
     conv_layer_specs = [
-        {"filter_shape": (32, in_channels, 13, 9), "pool_shape": (3, 3)}, 
-        {"filter_shape": (10, 32, 5, 5), "pool_shape": (3, 3)}, 
+        {"filter_shape": (32, in_channels, 13, 9), "pool_shape": (3, 3), "activation": "tanh"}, 
+        {"filter_shape": (10, 32, 5, 5), "pool_shape": (3, 3), "activation": "tanh"}, 
         ]
-    hidden_layer_specs = [{"units": 128}, {"units": 10}]
+    hidden_layer_specs = [
+        {"units": 128, "activation": "tanh"},
+        {"units": 10, "activation": "tanh"}
+        ]
     cnn_layers = build_cnn_layers(
         rng, input, input_shape, conv_layer_specs, hidden_layer_specs
         )

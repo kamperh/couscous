@@ -50,9 +50,9 @@ def test_siamese_cnn():
     batch_size = n_pairs
     input_shape = (batch_size, in_channels, height, width)
     conv_layer_specs = [
-        {"filter_shape": (32, in_channels, 39, 9), "pool_shape": (1, 3)},
+        {"filter_shape": (32, in_channels, 39, 9), "pool_shape": (1, 3), "activation": "tanh"}, 
         ]
-    hidden_layer_specs = [{"units": 128}]
+    hidden_layer_specs = [{"units": 128, "activation": "tanh"}]
     dropout_rates = None
     y = T.ivector("y")
     input_x1 = T.matrix("x1")

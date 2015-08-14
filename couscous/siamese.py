@@ -33,7 +33,7 @@ class SiameseCNN(object):
 
     def __init__(self, rng, input_x1, input_x2, input_shape,
             conv_layer_specs, hidden_layer_specs, srng=None,
-            dropout_rates=None, activation=T.tanh):
+            dropout_rates=None):
         """
         Initialize symbolic parameters and expressions.
 
@@ -56,7 +56,6 @@ class SiameseCNN(object):
         layers = cnn.build_cnn_layers(
             rng, input, input_shape, conv_layer_specs,
             hidden_layer_specs, srng, dropout_rates,
-            activation=activation
             )
 
         # Copy the shared variables
@@ -71,12 +70,12 @@ class SiameseCNN(object):
         x1_layers = cnn.build_cnn_layers(
             rng, input_x1, input_shape, conv_layer_specs,
             hidden_layer_specs, srng, dropout_rates,
-            activation=activation, init_W=shared_W, init_b=shared_b
+            init_W=shared_W, init_b=shared_b
             )
         x2_layers = cnn.build_cnn_layers(
             rng, input_x2, input_shape, conv_layer_specs,
             hidden_layer_specs, srng, dropout_rates,
-            activation=activation, init_W=shared_W, init_b=shared_b
+            init_W=shared_W, init_b=shared_b
             )
 
         if dropout_rates is not None:
@@ -235,7 +234,7 @@ class SiameseTripletCNN(object):
         self.input = input
         layers = cnn.build_cnn_layers(
             rng, input, input_shape, conv_layer_specs, hidden_layer_specs,
-            srng, dropout_rates, activation=activation
+            srng, dropout_rates
             )
 
         # Copy the shared variables
@@ -250,17 +249,17 @@ class SiameseTripletCNN(object):
         x1_layers = cnn.build_cnn_layers(
             rng, input_x1, input_shape, conv_layer_specs,
             hidden_layer_specs, srng, dropout_rates,
-            activation=activation, init_W=shared_W, init_b=shared_b
+            init_W=shared_W, init_b=shared_b
             )
         x2_layers = cnn.build_cnn_layers(
             rng, input_x2, input_shape, conv_layer_specs,
             hidden_layer_specs, srng, dropout_rates,
-            activation=activation, init_W=shared_W, init_b=shared_b
+            init_W=shared_W, init_b=shared_b
             )
         x3_layers = cnn.build_cnn_layers(
             rng, input_x3, input_shape, conv_layer_specs,
             hidden_layer_specs, srng, dropout_rates,
-            activation=activation, init_W=shared_W, init_b=shared_b
+            init_W=shared_W, init_b=shared_b
             )
 
         if dropout_rates is not None:

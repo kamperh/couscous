@@ -161,8 +161,7 @@ class CNN(object):
     """
 
     def __init__(self, rng, input, input_shape, conv_layer_specs,
-            hidden_layer_specs, d_out, srng=None, dropout_rates=None,
-            activation=T.tanh):
+            hidden_layer_specs, d_out, srng=None, dropout_rates=None):
         """
         Initialize symbolic parameters and expressions.
 
@@ -176,39 +175,45 @@ class CNN(object):
             Number of output classes.
         """
 
-        self.parameters = []
+        self.input = input
 
         # Build convolutional and fully-connected hidden layers
         if dropout_rates is not None:
             self.dropout_layers, self.layers = build_cnn_layers(
                 rng, input, input_shape, conv_layer_specs, hidden_layer_specs,
-                srng, dropout_rates, activation
+                srng, dropout_rates
                 )
         else:
             self.layers = build_cnn_layers(
                 rng, input, input_shape, conv_layer_specs,
-                hidden_layer_specs, activation=activation
+                hidden_layer_specs
                 )
 
         # Build logistic regression class prediction layer
         layer = logistic.LogisticRegression(
             input=self.layers[-1].output,
-            d_in=hidden_layer_sizes[-1],
+            d_in=hidden_layer_specs[-1]["units"],
             d_out=d_out
             )
         self.layers.append(layer)
         if dropout_rates is not None:
             dropout_layer = logistic.LogisticRegression(
                 input=self.dropout_layers[-1].output,
-                d_in=hidden_layer_sizes[-1],
+                d_in=hidden_layer_specs[-1]["units"],
                 d_out=d_out,
                 W=layer.W,
                 b=layer.b
                 )
             self.dropout_layers.append(dropout_layer)
 
+        # Model parameters
+        self.parameters = []
+        self.l1 = 0.
+        self.l2 = 0.
         for layer in self.layers:
             self.parameters += layer.parameters
+            self.l1 += abs(layer.W).sum()
+            self.l2 += (layer.W**2).sum()
 
         # Symbolic expressions of cost and prediction
         self.negative_log_likelihood = self.layers[-1].negative_log_likelihood
@@ -234,7 +239,7 @@ class CNN(object):
 
 def build_cnn_layers(rng, input, input_shape, conv_layer_specs,
         hidden_layer_specs, srng=None, dropout_rates=None,
-        activation=T.tanh, init_W=None, init_b=None):
+        init_W=None, init_b=None):
     """
     Return the layers of a CNN consisting of a number of convolutional layers
     followed by a number of fully-connected hidden layers.
@@ -257,8 +262,8 @@ def build_cnn_layers(rng, input, input_shape, conv_layer_specs,
                 "activation": theano_utils.relu
             }, 
             {
-                "filter_shape": (50, 20, 5, 5), "pool_shape": (2, 2)}
-                # this uses the default activation since none is specified
+                "filter_shape": (50, 20, 5, 5), "pool_shape": (2, 2)},
+                "activation": theano_utils.relu
             }
             ]
         hidden_layer_specs = [
@@ -283,9 +288,6 @@ def build_cnn_layers(rng, input, input_shape, conv_layer_specs,
     dropout_rates : list of float
         The dropout rates for each of the layers (including the convolutional
         layers); if not provided, dropout is not performed.
-    activation : operation
-        This is the activation used when an activation is not specified in
-        `conv_layer_specs` or `hidden_layer_specs`.
     init_W : list of shared tensors
         If provided, these weights are used for layer initialization. The
         weights should be given in the same order that the layers are created
@@ -315,13 +317,6 @@ def build_cnn_layers(rng, input, input_shape, conv_layer_specs,
         # We are going to pop parameters, so make copies
         init_W = init_W[:]
         init_b = init_b[:]
-
-    # if isinstance(activation, list):
-    #     logger.info("Per-layer activations specified")
-    #     # We are going to pop activation, so make copy
-    #     activation_list = activation[:]
-    # else:
-    #     activation_list = None
 
     layers = []
     if dropout_rates is not None:
@@ -353,10 +348,7 @@ def build_cnn_layers(rng, input, input_shape, conv_layer_specs,
         else:
             W = None
             b = None
-        if "activation" in conv_layer_specs[i_layer]:
-            cur_activation = conv_layer_specs[i_layer]["activation"]
-        else:
-            cur_activation = activation
+        cur_activation = conv_layer_specs[i_layer]["activation"]
 
         layer = ConvMaxPoolLayer(
             rng,
@@ -420,10 +412,7 @@ def build_cnn_layers(rng, input, input_shape, conv_layer_specs,
         else:
             W = None
             b = None
-        if "activation" in hidden_layer_specs[i_layer]:
-            cur_activation = hidden_layer_specs[i_layer]["activation"]
-        else:
-            cur_activation = activation
+        cur_activation = hidden_layer_specs[i_layer]["activation"]
         layer = mlp.HiddenLayer(
             rng=rng,
             input=cur_input,

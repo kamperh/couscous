@@ -71,6 +71,7 @@ class LogisticRegression(object):
         # each row corresponds to a data instance and each column corresponds
         # to a class
         self.p_y_given_x = T.nnet.softmax(self.linear_output)
+        self.output = self.p_y_given_x
 
         # Symbolic expression for class prediction
         self.y_pred = T.argmax(self.p_y_given_x, axis=1)

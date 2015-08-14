@@ -89,3 +89,52 @@ def tile_images(X, image_shape, tile_shape, tile_spacing=(1, 1),
             out_array[i:i + image_h, j:j + image_w] = cur_image * 255
 
     return out_array
+
+
+def plot_record_dict(record_dict, plot_fn=None):
+    """
+    Generates a plot of the given `record_dict`.
+
+    Parameters
+    ----------
+    record_dict : dict
+        See return value of `couscous.training.train_early_stopping`.
+    plot_fn : str
+        If provided, the plot is saved.
+    """
+
+    plt.figure()
+
+    fields = sorted(record_dict.keys())
+
+    def plot_field(field, i_loss=0):
+        epochs = [i[0] for i in record_dict[field]]
+        values = [i[1][i_loss] for i in record_dict[field]]
+        plt.plot(epochs, values, label=field)
+
+    # Determine the maximum number of outputs for any loss function
+    n_subplots = 0
+    loss_fields = []
+    for field in [i for i in fields if "loss" in i]:
+        loss_fields.append(field)
+        n_subplots = max(n_subplots, len(record_dict[field][0][1]))
+
+    # Subplot every loss function output seperately
+    for i_subplot in xrange(n_subplots):
+        plt.subplot(n_subplots, 1, i_subplot + 1)
+        for field in loss_fields:
+            if len(record_dict[field][0][1]) > i_subplot:
+                plot_field(field, i_subplot)
+        plt.legend()
+        plt.grid()
+        plt.ylabel("Loss [" + str(i_subplot) +  "]")
+
+    if plot_fn is not None:
+        plt.save(plot_fn)
+
+
+def make_patch_spines_invisible(ax):
+    ax.set_frame_on(True)
+    ax.patch.set_visible(False)
+    for sp in ax.spines.itervalues():
+        sp.set_visible(False)
