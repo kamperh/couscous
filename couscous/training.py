@@ -7,6 +7,7 @@ Date: 2015
 """
 
 from theano.compat.python2x import OrderedDict
+from datetime import datetime
 import cPickle as pickle
 import logging
 import numpy as np
@@ -220,6 +221,8 @@ def train_fixed_epochs_with_validation(n_epochs, train_model,
     #     record_dict["validation_extrinsic"] = []
     record_dict["epoch_time"] = []
 
+    logger.info(datetime.now())
+
     # Training epochs
     best_validation_loss0 = np.inf
     test_loss = np.inf
@@ -297,6 +300,8 @@ def train_fixed_epochs_with_validation(n_epochs, train_model,
         logger.info("Best validation model saved: " + save_model_fn)
     if record_dict_fn is not None:
         logger.info("Saved record: " + record_dict_fn)
+
+    logger.info(datetime.now())
 
     return record_dict
 
