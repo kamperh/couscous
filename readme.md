@@ -11,7 +11,7 @@ code, without feature extraction or evaluation code, or even an example script.
 We hope to release a separate recipe illustrating the use of Siamese CNNs for
 representation learning of word segments. For now, at least some of the test
 functions in ``couscous/tests/`` should be helpful if you want to start to
-unravel the current code. The name "Couscous" comes from the $\cos \cos^2$ loss
+unravel the current code. The name "Couscous" comes from the "cos cos^2" loss
 used for training Siamese networks.
 
 
