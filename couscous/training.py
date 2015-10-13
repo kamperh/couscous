@@ -169,6 +169,104 @@ def learning_rule_adadelta(parameters, gradients, rho=0.9, epsilon=1e-6):
 #                              TRAINING FUNCTIONS                             #
 #-----------------------------------------------------------------------------#
 
+def train_fixed_epochs(n_epochs, train_model, train_batch_iterator,
+        test_model=None, test_batch_iterator=None, save_model_func=None,
+        save_model_fn=None, record_dict_fn=None):
+    """
+    Train for a fixed number of epochs.
+
+    Parameters
+    ----------
+    train_model : Theano function
+        Should take input from `train_batch_iterator` and output the training
+        loss. The function can provide more than one output, which is averaged.
+        This is useful for example to output both negative log likelihood (the
+        model loss) and zero-one loss (the number of errors).
+    train_batch_iterator : generator
+        Provides the training batches.
+    save_model_func : function
+        If provided, this function is used to the save the model to the file
+        `save_model_fn` every time a new validation best model is found.
+    save_model_fn : str
+        The file to which the best model is written.
+    record_dict_fn : str
+        If provided, the current `record_dict` is saved to this file at the end
+        of every epoch.
+
+    Return
+    ------
+    record_dict : dict
+        The dict key describes the statistic being tracked, while the dict
+        value is a list of (epoch, statistic) tuples giving the statistic-value
+        at a particular epoch.
+    """
+
+    record_dict = {}
+    record_dict["train_loss"] = []          # each element is (epoch, loss)
+    if test_model is not None:
+        record_dict["test_loss"] = []       # testing is not necessarily performed every epoch
+    record_dict["epoch_time"] = []
+
+    logger.info(datetime.now())
+
+    # Training epochs
+    i_epoch_best = 0
+    test_loss = np.inf
+    for i_epoch in xrange(n_epochs):
+
+        # Loop over training batches
+        # train_losses = []
+        start_time = timeit.default_timer()
+        train_losses = [train_model(*batch) for batch in train_batch_iterator]
+        # for i_batch in xrange(n_train_batches):
+        # for batch in train_batch_iterator()
+            # Calculate training loss for this batch and update parameters
+            # train_losses.append(train_model(*batch))
+
+        # Test model
+        if test_model is not None:
+            test_losses = [test_model(*batch) for batch in test_batch_iterator]
+            test_loss = np.mean(test_losses, axis=0)
+            logger.info("    Test loss: " + str(test_loss))
+            record_dict["test_loss"].append((i_epoch, test_loss))
+
+        # Write this model
+        if save_model_func is not None:
+            f = smart_open(save_model_fn, "wb")
+            save_model_func(f)
+            f.close()
+
+        # Training statistics for this epoch
+        end_time = timeit.default_timer()
+        train_loss = np.mean(train_losses, axis=0)
+        epoch_time = end_time - start_time
+        # logger.info("Training loss: " + str(train_loss)  # + ", " + 
+            # )
+        logger.info("Time: %f" % (epoch_time) + " sec, " + 
+            "training loss: " + str(train_loss)  # + ", " + 
+            )
+        record_dict["epoch_time"].append((i_epoch, epoch_time))
+        record_dict["train_loss"].append((i_epoch, train_loss))
+
+        if record_dict_fn is not None:
+            f = smart_open(record_dict_fn, "wb")
+            pickle.dump(record_dict, f, -1)
+            f.close()
+
+    total_time = np.sum([i[1] for i in record_dict["epoch_time"]])
+    logger.info("Training complete: %f min" % (total_time / 60.))
+    if test_model is not None:
+        logger.info("Test loss: " + str(test_loss))
+    if save_model_func is not None:
+        logger.info("Model saved: " + save_model_fn)
+    if record_dict_fn is not None:
+        logger.info("Saved record: " + record_dict_fn)
+
+    logger.info(datetime.now())
+
+    return record_dict
+
+
 def train_fixed_epochs_with_validation(n_epochs, train_model,
         train_batch_iterator, validate_model, validate_batch_iterator,
         test_model=None, test_batch_iterator=None, save_model_func=None,
