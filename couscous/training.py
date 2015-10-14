@@ -214,6 +214,8 @@ def train_fixed_epochs(n_epochs, train_model, train_batch_iterator,
     test_loss = np.inf
     for i_epoch in xrange(n_epochs):
 
+        logger.info("Epoch " + str(i_epoch + 1) + ":")
+
         # Loop over training batches
         # train_losses = []
         start_time = timeit.default_timer()
